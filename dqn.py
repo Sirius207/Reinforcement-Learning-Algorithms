@@ -65,7 +65,7 @@ class DQN:
     
     def choose_action(self, state):
         if np.random.random() < self.get_epsilon():
-            return self.env.action_space.sample()
+            return np.random.choice([0, 1])
         else:
             return np.argmax(self.model.predict(state)[0])
 

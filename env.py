@@ -49,14 +49,17 @@ def main():
         while not done:
             # env.render()
             action = agent.choose_action(state)
-            new_state, reward, done, _ = env.step(action)
+            action_ = 2 if action == 1 else 0
+            new_state, reward, done, _ = env.step(action_)
 
             # modify reward
             position, velocity = new_state
-            if(position >= 0.5):
-                reward = 100
+            if (action_ == 2 and velocity > 0):
+                reward = 1
+            elif(action_ == 0 and velocity < 0):
+                reward = 1
             else:
-                reward = abs(position - (-0.5))
+                reward = -1
 
             new_state = agent.preprocess_state(new_state)
             agent.remember(state, action, reward, new_state, done)
