@@ -9,6 +9,8 @@ from keras.optimizers import Adam
 
 from collections import deque
 
+np.random.seed(1)
+
 
 class DQN:
     def __init__(
@@ -51,8 +53,8 @@ class DQN:
             optimizer=Adam(lr=self.alpha)) #decay=self.alpha_decay)
         return model
     
-    def _get_epsilon(self, episode):
-        self.epsilon = min(self.epsilon, 1.0 - math.log10((episode + 1) * self.epsilon_decay))
+    def decay_epsilon(self):
+        self.epsilon = self.epsilon * self.epsilon_decay
         self.epsilon = max(self.epsilon_min, self.epsilon)
         return self.epsilon
 
@@ -62,9 +64,8 @@ class DQN:
     def remember(self, state, action, reward, new_state, done):
         self.memory.append([state, action, reward, new_state, done])
     
-    def choose_action(self, state, episode):
-        epsilon = self._get_epsilon(episode)
-        if np.random.random() < epsilon:
+    def choose_action(self, state):
+        if np.random.random() < self.epsilon:
             return self.env.action_space.sample()
         else:
             # 0?

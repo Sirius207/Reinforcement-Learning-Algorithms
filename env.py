@@ -9,14 +9,14 @@ logging.getLogger().setLevel(logging.INFO)
 
 MEMORY_SIZE = 10000
 BATCH_SIZE = 64
-GAMMA = 0.85
+GAMMA = 0.999
 EPSILON = 1.0
 EPSILON_MIN = 0.01
-EPSILON_DECAY = 0.995
-ALPHA = 0.005
+EPSILON_DECAY = 0.95
+ALPHA = 0.0025
 ALPHA_DECAY = 0.01
 
-N_EPISODE = 150
+N_EPISODE = 10000
 
 def main():
     env = gym.make("MountainCar-v0")
@@ -47,7 +47,7 @@ def main():
         ep_reward = 0
         while not done:
             # env.render()
-            action = agent.choose_action(state, i_episode)
+            action = agent.choose_action(state)
             new_state, reward, done, _ = env.step(action)
 
             # modify reward
@@ -62,11 +62,12 @@ def main():
             
             if (i_episode > 100):
                 agent.replay()
-                if (i_episode%5 == 0):
+                if (i_episode%3 == 0):
                     agent.train_target()
 
             state = new_state
             if(done):
+                agent.decay_epsilon()
                 reward_list.append(ep_reward)
                 logging.info(f"Episode: {i_episode}, Steps: {steps}, Reward: {ep_reward}")
                 break
