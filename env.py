@@ -7,20 +7,21 @@ from dqn import DQN
 logging.getLogger().setLevel(logging.INFO)
 
 
-MEMORY_SIZE = 10000
-BATCH_SIZE = 64
-GAMMA = 0.999
+MEMORY_SIZE = 2000
+BATCH_SIZE = 32
+GAMMA = 0.85
 EPSILON = 1.0
 EPSILON_MIN = 0.01
-EPSILON_DECAY = 0.95
-ALPHA = 0.0025
-ALPHA_DECAY = 0.01
+EPSILON_DECAY = 0.995
+ALPHA = 0.005
+ALPHA_DECAY = 0.001
 
 N_EPISODE = 10000
 
 def main():
     env = gym.make("MountainCar-v0")
     # env._max_episode_steps=500
+    # env = env.unwrapped
 
     print(env.action_space)
     print(env.observation_space)
@@ -59,15 +60,12 @@ def main():
 
             new_state = agent.preprocess_state(new_state)
             agent.remember(state, action, reward, new_state, done)
-            
-            if (i_episode > 100):
-                agent.replay()
-                if (i_episode%3 == 0):
-                    agent.train_target()
+        
+            agent.replay()
+            agent.train_target()
 
             state = new_state
             if(done):
-                agent.decay_epsilon()
                 reward_list.append(ep_reward)
                 logging.info(f"Episode: {i_episode}, Steps: {steps}, Reward: {ep_reward}")
                 break

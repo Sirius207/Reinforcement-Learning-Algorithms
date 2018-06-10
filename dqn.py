@@ -40,7 +40,6 @@ class DQN:
         self.model = self._build_model()
         self.target_model = self._build_model()
 
-        self.cost_history = []
 
     def _build_model(self):
         model = Sequential()
@@ -53,31 +52,35 @@ class DQN:
             optimizer=Adam(lr=self.alpha)) #decay=self.alpha_decay)
         return model
     
-    def decay_epsilon(self):
+    def get_epsilon(self):
         self.epsilon = self.epsilon * self.epsilon_decay
         self.epsilon = max(self.epsilon_min, self.epsilon)
         return self.epsilon
 
     def preprocess_state(self, state):
-        return np.reshape(state, [1, 2])
+        return state.reshape(1,2)
 
     def remember(self, state, action, reward, new_state, done):
         self.memory.append([state, action, reward, new_state, done])
     
     def choose_action(self, state):
-        if np.random.random() < self.epsilon:
+        if np.random.random() < self.get_epsilon():
             return self.env.action_space.sample()
         else:
-            # 0?
             return np.argmax(self.model.predict(state)[0])
 
     def replay(self):
-        miniBatch = random.sample(
-            self.memory, 
-            min(len(self.memory), self.batch_size)
-        )
+        # miniBatch = random.sample(
+        #     self.memory, 
+        #     min(len(self.memory), self.batch_size)
+        # )
+        if len(self.memory) < self.batch_size: 
+            return
 
-        for state, action, reward, new_state, done in miniBatch:
+        miniBatch = random.sample(self.memory, self.batch_size)
+
+        for sample in miniBatch:
+            state, action, reward, new_state, done = sample
             target = self.target_model.predict(state)
             if(done):
                 target[0][action] = reward
@@ -86,7 +89,6 @@ class DQN:
                 target[0][action] = reward + self.gamma * Q_future
 
             self.model.fit(state, target, epochs=1, verbose=0)
-            # self.cost_history.append(history.history['loss'])
 
     def train_target(self):
         weights = self.model.get_weights()
@@ -98,8 +100,3 @@ class DQN:
     def save_model(self, fn):
         self.model.save(fn)
 
-    def plot_cost(self):
-        plt.plot(np.arange(len(self.cost_history)), self.cost_history)
-        plt.ylabel('Cost')
-        plt.xlabel('training steps')
-        plt.show()
