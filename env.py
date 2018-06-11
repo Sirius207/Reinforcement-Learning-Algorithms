@@ -16,7 +16,7 @@ EPSILON_DECAY = 0.995
 ALPHA = 0.005
 ALPHA_DECAY = 0.001
 
-N_EPISODE = 20
+N_EPISODE = 50
 UPDATE_TARGET_PERIOD = 1
 START_REPLAY_EPISODE = 0
 
@@ -59,22 +59,26 @@ def main():
             # modify reward
             position, velocity = new_state
             if (action_ == 2 and velocity > 0):
-                reward = 1
+                reward = -1
             elif(action_ == 0 and velocity < 0):
-                reward = 1
+                reward = -1
             else:
-                reward = -2
+                reward = -5
             
             if (position - (-0.5) > 0):
                 reward += abs(position - (-0.5))
 
-            if (position > 0.5):
-                reward = (200-steps) * 100
+            if (position == 0.6):
+                if (action_ == 2):
+                    reward = abs(position - (-0.5)) * 1000
+                else:
+                    reward = -1
 
             new_state = agent.preprocess_state(new_state)
             agent.remember(state, action, reward, new_state, done)
         
             if(i_episode > START_REPLAY_EPISODE):
+                agent.decay_epsilon()
                 agent.replay()
                 if(i_episode % UPDATE_TARGET_PERIOD == 0):
                     agent.train_target()

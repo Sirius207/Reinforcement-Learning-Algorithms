@@ -66,19 +66,16 @@ class DQN:
         self.memory.append([state, action, reward, new_state, done])
     
     def choose_action(self, state):
-        if np.random.random() < self.decay_epsilon():
+        if np.random.random() < self.epsilon:
             return np.random.choice([0, 1])
         else:
+            # choose action by past model
             return np.argmax(self.model.predict(state)[0])
-
-    def replay(self):
-        miniBatch = random.sample(
-            self.memory, 
-            min(len(self.memory), self.batch_size)
-        )
+    
+    def _setBatch(self, batch):
         x_batch = []
         y_batch = []
-        for state, action, reward, new_state, done in miniBatch:
+        for state, action, reward, new_state, done in batch:
             target = self.target_model.predict(state)
             if(done):
                 target[0][action] = reward
@@ -87,6 +84,16 @@ class DQN:
                 target[0][action] = reward + self.gamma * Q_future
             x_batch.append(state[0])
             y_batch.append(target[0])
+        
+        return (x_batch, y_batch)
+
+    def replay(self):
+        batch = random.sample(
+            self.memory, 
+            min(len(self.memory), self.batch_size)
+        )
+        # x -> state, y -> Q value
+        x_batch, y_batch = self._setBatch(batch)
         self.model.fit(np.array(x_batch), np.array(y_batch), epochs=1, verbose=0, batch_size=len(x_batch))
 
     def train_target(self):
