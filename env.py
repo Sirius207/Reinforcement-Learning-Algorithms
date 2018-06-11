@@ -20,6 +20,21 @@ N_EPISODE = 50
 UPDATE_TARGET_PERIOD = 1
 START_REPLAY_EPISODE = 0
 
+
+def set_reward(new_state, action_):
+    position, velocity = new_state
+    if (action_ == 2 and velocity > 0):
+        reward = -1
+    elif(action_ == 0 and velocity < 0):
+        reward = -1
+    else:
+        reward = -5
+
+    if (position - (-0.5) > 0):
+        reward += abs(position - (-0.5))
+
+    return reward
+
 def main():
     env = gym.make("MountainCar-v0")
     # env._max_episode_steps=500
@@ -57,22 +72,7 @@ def main():
             new_state, reward, done, _ = env.step(action_)
 
             # modify reward
-            position, velocity = new_state
-            if (action_ == 2 and velocity > 0):
-                reward = -1
-            elif(action_ == 0 and velocity < 0):
-                reward = -1
-            else:
-                reward = -5
-            
-            if (position - (-0.5) > 0):
-                reward += abs(position - (-0.5))
-
-            if (position == 0.6):
-                if (action_ == 2):
-                    reward = abs(position - (-0.5)) * 1000
-                else:
-                    reward = -1
+            reward = set_reward(new_state, action_)
 
             new_state = agent.preprocess_state(new_state)
             agent.remember(state, action, reward, new_state, done)
@@ -87,6 +87,7 @@ def main():
             ep_reward += reward
 
             if(done):
+                print(state[0])
                 reward_list.append(ep_reward)
                 steps_list.append(steps)
                 logging.info(f"Episode: {i_episode}, Steps: {steps}, Reward: {ep_reward}, Epsilon: {agent.epsilon}")
