@@ -47,8 +47,11 @@ class DQN:
         model.add(Dense(48, activation='relu'))
         model.add(Dense(24, activation="relu"))
         model.add(Dense(self.env.action_space.n))
-        model.compile(loss="mean_squared_error",
-            optimizer=Adam(lr=self.alpha,decay=self.alpha_decay))
+        model.compile(
+            loss="mean_squared_error",
+            optimizer=Adam(lr=self.alpha,decay=self.alpha_decay)
+        )
+        print(model.summary())
         return model
     
     def decay_epsilon(self):
@@ -73,6 +76,8 @@ class DQN:
             self.memory, 
             min(len(self.memory), self.batch_size)
         )
+        x_batch = []
+        y_batch = []
         for state, action, reward, new_state, done in miniBatch:
             target = self.target_model.predict(state)
             if(done):
@@ -80,8 +85,9 @@ class DQN:
             else:
                 Q_future = max(self.target_model.predict(new_state)[0])
                 target[0][action] = reward + self.gamma * Q_future
-
-            self.model.fit(state, target, epochs=1, verbose=0)
+            x_batch.append(state[0])
+            y_batch.append(target[0])
+        self.model.fit(np.array(x_batch), np.array(y_batch), epochs=1, verbose=0, batch_size=len(x_batch))
 
     def train_target(self):
         weights = self.model.get_weights()
