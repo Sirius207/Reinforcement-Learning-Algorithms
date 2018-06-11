@@ -92,7 +92,3 @@ class DQN:
     def train_target(self):
         weights = self.model.get_weights()
         self.target_model.set_weights(weights)
-
-    def save_model(self, fn):
-        self.model.save(fn)
-
