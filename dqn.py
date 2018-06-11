@@ -35,7 +35,6 @@ class DQN:
         self.epsilon_decay = epsilon_decay
         self.alpha = alpha
         self.alpha_decay = alpha_decay
-        self.tau = 0.125
 
         self.model = self._build_model()
         self.target_model = self._build_model()
@@ -49,10 +48,10 @@ class DQN:
         model.add(Dense(24, activation="relu"))
         model.add(Dense(self.env.action_space.n))
         model.compile(loss="mean_squared_error",
-            optimizer=Adam(lr=self.alpha)) #decay=self.alpha_decay)
+            optimizer=Adam(lr=self.alpha,decay=self.alpha_decay))
         return model
     
-    def get_epsilon(self):
+    def decay_epsilon(self):
         self.epsilon = self.epsilon * self.epsilon_decay
         self.epsilon = max(self.epsilon_min, self.epsilon)
         return self.epsilon
@@ -64,23 +63,17 @@ class DQN:
         self.memory.append([state, action, reward, new_state, done])
     
     def choose_action(self, state):
-        if np.random.random() < self.get_epsilon():
+        if np.random.random() < self.decay_epsilon():
             return np.random.choice([0, 1])
         else:
             return np.argmax(self.model.predict(state)[0])
 
     def replay(self):
-        # miniBatch = random.sample(
-        #     self.memory, 
-        #     min(len(self.memory), self.batch_size)
-        # )
-        if len(self.memory) < self.batch_size: 
-            return
-
-        miniBatch = random.sample(self.memory, self.batch_size)
-
-        for sample in miniBatch:
-            state, action, reward, new_state, done = sample
+        miniBatch = random.sample(
+            self.memory, 
+            min(len(self.memory), self.batch_size)
+        )
+        for state, action, reward, new_state, done in miniBatch:
             target = self.target_model.predict(state)
             if(done):
                 target[0][action] = reward
@@ -92,10 +85,7 @@ class DQN:
 
     def train_target(self):
         weights = self.model.get_weights()
-        target_weights = self.target_model.get_weights()
-        for i in range(len(target_weights)):
-            target_weights[i] = weights[i] * self.tau + target_weights[i] * (1 - self.tau)
-        self.target_model.set_weights(target_weights)
+        self.target_model.set_weights(weights)
 
     def save_model(self, fn):
         self.model.save(fn)
